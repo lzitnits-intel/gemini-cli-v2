@@ -39,7 +39,12 @@ With the Gemini CLI you can:
    ```
 
 3. **Pick a color theme**
-4. **Authenticate:** When prompted, sign in with your personal Google account. This will grant you up to 60 model requests per minute and 1,000 model requests per day using Gemini.
+4. **Authenticate:** When prompted, choose your preferred AI provider:
+   - **Login with Google:** Sign in with your personal Google account for up to 60 model requests per minute and 1,000 model requests per day using Gemini.
+   - **Gemini API Key:** Use a Google AI Studio API key for higher limits.
+   - **DeepSeek API Key:** Use DeepSeek's models with your DeepSeek API key.
+   - **OpenAI-like API:** Use any OpenAI-compatible API (DeepSeek, OpenAI, Volcengine, etc.)
+   - **Vertex AI:** For enterprise Google Cloud users.
 
 You are now ready to use the Gemini CLI!
 
@@ -69,6 +74,42 @@ The Vertex AI API provides a [free tier](https://cloud.google.com/vertex-ai/gene
    ```
 
 3. (Optionally) Add a billing account on your project to get access to [higher usage limits](https://cloud.google.com/vertex-ai/generative-ai/docs/quotas)
+
+### Use DeepSeek API:
+
+To use DeepSeek's models (including DeepSeek-V3 and DeepSeek-R1):
+
+1. Generate a key from [DeepSeek Platform](https://platform.deepseek.com/).
+2. Set it as an environment variable in your terminal. Replace `YOUR_DEEPSEEK_API_KEY` with your generated key.
+
+   ```bash
+   export DEEPSEEK_API_KEY="YOUR_DEEPSEEK_API_KEY"
+   ```
+
+3. Optionally specify the model (defaults to `deepseek-chat`):
+
+   ```bash
+   export GEMINI_MODEL="deepseek-reasoner"  # For DeepSeek-R1
+   ```
+
+### Use OpenAI-like API:
+
+To use any OpenAI-compatible API (OpenAI, Azure OpenAI, Volcengine, etc.):
+
+1. Set the required environment variables:
+
+   ```bash
+   export OPENAI_LIKE_API_KEY="YOUR_API_KEY"
+   export OPENAI_LIKE_BASE_URL="https://api.openai.com/v1"  # Or your provider's base URL
+   export OPENAI_LIKE_MODEL="gpt-4"  # Optional, defaults to gpt-3.5-turbo
+   ```
+
+2. For Azure OpenAI, also set:
+
+   ```bash
+   export OPENAI_LIKE_DEPLOYMENT_ID="your-deployment-id"
+   export OPENAI_LIKE_API_VERSION="2023-12-01-preview"
+   ```
 
 For other authentication methods, including Google Workspace accounts, see the [authentication](./docs/cli/authentication.md) guide.
 

@@ -32,6 +32,7 @@ import { retryWithBackoff } from '../utils/retry.js';
 import { getErrorMessage } from '../utils/errors.js';
 import { isFunctionResponse } from '../utils/messageInspectors.js';
 import { tokenLimit } from './tokenLimits.js';
+import { extractJsonFromText } from '../utils/jsonUtils.js';
 import {
   AuthType,
   ContentGenerator,
@@ -393,7 +394,7 @@ export class GeminiClient {
         throw error;
       }
       try {
-        return JSON.parse(text);
+        return JSON.parse(extractJsonFromText(text));
       } catch (parseError) {
         await reportError(
           parseError,

@@ -69,7 +69,47 @@ The Gemini CLI requires you to authenticate with Google's AI services. On initia
           echo 'export GOOGLE_CLOUD_LOCATION="YOUR_PROJECT_LOCATION"' >> ~/.bashrc
           source ~/.bashrc
           ```
-4.  **Cloud Shell:**
+
+4.  **DeepSeek API:**
+    - Obtain your API key from DeepSeek Platform: [https://platform.deepseek.com/](https://platform.deepseek.com/)
+    - Set the `DEEPSEEK_API_KEY` environment variable. In the following methods, replace `YOUR_DEEPSEEK_API_KEY` with the API key you obtained from DeepSeek:
+      - You can temporarily set the environment variable in your current shell session using the following command:
+        ```bash
+        export DEEPSEEK_API_KEY="YOUR_DEEPSEEK_API_KEY"
+        ```
+      - For repeated use, you can add the environment variable to your [.env file](#persisting-environment-variables-with-env-files) or your shell's configuration file (like `~/.bashrc`, `~/.zshrc`, or `~/.profile`). For example, the following command adds the environment variable to a `~/.bashrc` file:
+        ```bash
+        echo 'export DEEPSEEK_API_KEY="YOUR_DEEPSEEK_API_KEY"' >> ~/.bashrc
+        source ~/.bashrc
+        ```
+    - Optionally, specify the model (defaults to `deepseek-chat`):
+      ```bash
+      export GEMINI_MODEL="deepseek-reasoner"  # For DeepSeek-R1
+      ```
+
+5.  **OpenAI-like API:**
+    - This option allows you to use any OpenAI-compatible API (OpenAI, Azure OpenAI, Volcengine, etc.)
+    - Set the required environment variables. Replace the placeholder values with your actual API credentials:
+      - You can temporarily set these environment variables in your current shell session using the following commands:
+        ```bash
+        export OPENAI_LIKE_API_KEY="YOUR_API_KEY"
+        export OPENAI_LIKE_BASE_URL="https://api.openai.com/v1"  # Or your provider's base URL
+        export OPENAI_LIKE_MODEL="gpt-4"  # Optional, defaults to gpt-3.5-turbo
+        ```
+      - For Azure OpenAI, also set:
+        ```bash
+        export OPENAI_LIKE_DEPLOYMENT_ID="your-deployment-id"
+        export OPENAI_LIKE_API_VERSION="2023-12-01-preview"
+        ```
+      - For repeated use, you can add the environment variables to your [.env file](#persisting-environment-variables-with-env-files) or your shell's configuration file (like `~/.bashrc`, `~/.zshrc`, or `~/.profile`). For example, the following commands add the environment variables to a `~/.bashrc` file:
+        ```bash
+        echo 'export OPENAI_LIKE_API_KEY="YOUR_API_KEY"' >> ~/.bashrc
+        echo 'export OPENAI_LIKE_BASE_URL="https://api.openai.com/v1"' >> ~/.bashrc
+        echo 'export OPENAI_LIKE_MODEL="gpt-4"' >> ~/.bashrc
+        source ~/.bashrc
+        ```
+
+6.  **Cloud Shell:**
     - This option is only available when running in a Google Cloud Shell environment.
     - It automatically uses the credentials of the logged-in user in the Cloud Shell environment.
     - This is the default authentication method when running in Cloud Shell and no other method is configured.
