@@ -226,6 +226,73 @@ export class OpenAILikeContentGenerator implements ContentGenerator {
   }
 
   /**
+   * Convert Google Type enum values and schema properties to standard JSON Schema format
+   */
+  private convertGoogleTypeToJsonSchema(obj: any): any {
+    if (typeof obj !== 'object' || obj === null) {
+      return obj;
+    }
+
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.convertGoogleTypeToJsonSchema(item));
+    }
+
+    const converted: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (key === 'type' && typeof value === 'string') {
+        // Convert Google Type enum values to JSON Schema types
+        switch (value) {
+          case 'STRING':
+            converted[key] = 'string';
+            break;
+          case 'NUMBER':
+            converted[key] = 'number';
+            break;
+          case 'INTEGER':
+            converted[key] = 'integer';
+            break;
+          case 'BOOLEAN':
+            converted[key] = 'boolean';
+            break;
+          case 'ARRAY':
+            converted[key] = 'array';
+            break;
+          case 'OBJECT':
+            converted[key] = 'object';
+            break;
+          default:
+            // If it's already a standard JSON Schema type, keep it
+            converted[key] = value;
+        }
+      } else if (this.isNumericSchemaProperty(key) && typeof value === 'string') {
+        // Convert string numeric values to actual numbers for schema properties
+        const numValue = parseInt(value, 10);
+        if (!isNaN(numValue)) {
+          converted[key] = numValue;
+        } else {
+          converted[key] = value;
+        }
+      } else {
+        // Recursively convert nested objects
+        converted[key] = this.convertGoogleTypeToJsonSchema(value);
+      }
+    }
+    return converted;
+  }
+
+  /**
+   * Check if a schema property should have numeric values
+   */
+  private isNumericSchemaProperty(key: string): boolean {
+    const numericProperties = [
+      'minLength', 'maxLength', 'minItems', 'maxItems', 
+      'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum',
+      'multipleOf', 'minProperties', 'maxProperties'
+    ];
+    return numericProperties.includes(key);
+  }
+
+  /**
    * Convert Gemini function declarations to OpenAI tools format
    */
   private convertToOpenAITools(functionDeclarations?: FunctionDeclaration[]): OpenAILikeTool[] {
@@ -236,7 +303,7 @@ export class OpenAILikeContentGenerator implements ContentGenerator {
       function: {
         name: declaration.name || 'unknown_function',
         description: declaration.description || '',
-        parameters: (declaration.parameters as Record<string, unknown>) || {}
+        parameters: this.convertGoogleTypeToJsonSchema(declaration.parameters || {})
       }
     }));
   }
@@ -334,11 +401,13 @@ export class OpenAILikeContentGenerator implements ContentGenerator {
     }
     const openaiTools = this.convertToOpenAITools(allDeclarations);
     
+    // Some OpenAI-like APIs don't support temperature: 0, only default (1)
+    const temperature = request.config?.temperature;
     const openaiRequest: OpenAILikeRequest = {
       model: this.defaultModel,
       messages,
       stream: false,
-      temperature: request.config?.temperature,
+      ...(temperature !== undefined && temperature !== 0 && { temperature }),
       max_tokens: request.config?.maxOutputTokens,
       top_p: request.config?.topP,
       ...(openaiTools.length > 0 && {
@@ -395,11 +464,13 @@ export class OpenAILikeContentGenerator implements ContentGenerator {
     }
     const openaiTools = this.convertToOpenAITools(allDeclarations);
     
+    // Some OpenAI-like APIs don't support temperature: 0, only default (1)
+    const temperature = request.config?.temperature;
     const openaiRequest: OpenAILikeRequest = {
       model: this.defaultModel,
       messages,
       stream: true,
-      temperature: request.config?.temperature,
+      ...(temperature !== undefined && temperature !== 0 && { temperature }),
       max_tokens: request.config?.maxOutputTokens,
       top_p: request.config?.topP,
       ...(openaiTools.length > 0 && {
