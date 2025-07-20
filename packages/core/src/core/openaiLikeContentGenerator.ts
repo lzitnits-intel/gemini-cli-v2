@@ -236,84 +236,9 @@ export class OpenAILikeContentGenerator implements ContentGenerator {
       function: {
         name: declaration.name || 'unknown_function',
         description: declaration.description || '',
-        parameters: this.convertGeminiSchemaToOpenAI(declaration.parameters as Record<string, unknown>) || {}
+        parameters: (declaration.parameters as Record<string, unknown>) || {}
       }
     }));
-  }
-
-  /**
-   * Convert Gemini schema format to OpenAI JSON Schema format
-   */
-  private convertGeminiSchemaToOpenAI(schema: Record<string, unknown>): Record<string, unknown> {
-    if (!schema || typeof schema !== 'object') {
-      return schema;
-    }
-
-    const result: Record<string, unknown> = {};
-    
-    for (const [key, value] of Object.entries(schema)) {
-      if (key === 'type' && typeof value === 'string') {
-        // Convert Gemini types to JSON Schema types
-        switch (value) {
-          case 'BOOLEAN':
-            result[key] = 'boolean';
-            break;
-          case 'STRING':
-            result[key] = 'string';
-            break;
-          case 'NUMBER':
-            result[key] = 'number';
-            break;
-          case 'INTEGER':
-            result[key] = 'integer';
-            break;
-          case 'ARRAY':
-            result[key] = 'array';
-            break;
-          case 'OBJECT':
-            result[key] = 'object';
-            break;
-          default:
-            result[key] = value;
-        }
-      } else if (key === 'properties' && typeof value === 'object' && value !== null) {
-        // Recursively convert properties
-        const properties: Record<string, unknown> = {};
-        for (const [propKey, propValue] of Object.entries(value)) {
-          if (typeof propValue === 'object' && propValue !== null) {
-            properties[propKey] = this.convertGeminiSchemaToOpenAI(propValue as Record<string, unknown>);
-          } else {
-            properties[propKey] = propValue;
-          }
-        }
-        result[key] = properties;
-      } else if (key === 'items' && typeof value === 'object' && value !== null) {
-        // Recursively convert array items schema
-        result[key] = this.convertGeminiSchemaToOpenAI(value as Record<string, unknown>);
-      } else if (this.isNumericConstraint(key) && typeof value === 'string') {
-        // Convert string numeric constraints to numbers for OpenAI
-        const numValue = Number(value);
-        if (!isNaN(numValue)) {
-          result[key] = numValue;
-        } else {
-          result[key] = value;
-        }
-      } else {
-        result[key] = value;
-      }
-    }
-    
-    return result;
-  }
-
-  /**
-   * Check if a key represents a numeric constraint in JSON Schema
-   */
-  private isNumericConstraint(key: string): boolean {
-    return [
-      'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum',
-      'minLength', 'maxLength', 'minItems', 'maxItems', 'minProperties', 'maxProperties'
-    ].includes(key);
   }
 
   /**

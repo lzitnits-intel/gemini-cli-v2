@@ -20,16 +20,14 @@ With the Gemini CLI you can:
 ## Quickstart
 
 1. **Prerequisites:** Ensure you have [Node.js version 20](https://nodejs.org/en/download) or higher installed.
-2. **Run the CLI:** Execute the following command in your terminal:
+2. **Run the CLI:** Execute the following command in your terminal from the repo's directory:
 
    ```bash
-   npx https://github.com/google-gemini/gemini-cli
-   ```
-
-   Or install it with:
-
-   ```bash
-   npm install -g @google/gemini-cli
+   npm install 
+   npm run build
+   
+   # Install directly from directory
+   npm install -g .
    ```
 
    Then, run the CLI from anywhere:
