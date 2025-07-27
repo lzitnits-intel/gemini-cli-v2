@@ -298,14 +298,19 @@ export class OpenAILikeContentGenerator implements ContentGenerator {
   private convertToOpenAITools(functionDeclarations?: FunctionDeclaration[]): OpenAILikeTool[] {
     if (!functionDeclarations) return [];
     
-    return functionDeclarations.map(declaration => ({
-      type: 'function' as const,
-      function: {
-        name: declaration.name || 'unknown_function',
-        description: declaration.description || '',
-        parameters: this.convertGoogleTypeToJsonSchema(declaration.parameters || {})
-      }
-    }));
+    return functionDeclarations.map(declaration => {
+      // Use parametersJsonSchema if parameters is undefined (for MCP tools)
+      const parameters = declaration.parameters || declaration.parametersJsonSchema || {};
+      
+      return {
+        type: 'function' as const,
+        function: {
+          name: declaration.name || 'unknown_function',
+          description: declaration.description || '',
+          parameters: this.convertGoogleTypeToJsonSchema(parameters)
+        }
+      };
+    });
   }
 
   /**
