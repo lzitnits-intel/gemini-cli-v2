@@ -19,6 +19,15 @@ import {
 } from '@google/genai';
 import { ContentGenerator } from './contentGenerator.js';
 import { DEFAULT_OPENAI_LIKE_MODEL } from '../config/models.js';
+import fs from 'fs'
+import https from 'https'
+import fetch from "node-fetch"
+
+// Create custom agent to handle certificates
+const caPath = process.env.CA_CERT_PATH;
+const agentfetch = new https.Agent({
+  ca: fs.readFileSync(caPath ?? "")
+})
 
 /**
  * Helper function to convert ContentListUnion to Content[]
@@ -426,18 +435,19 @@ export class OpenAILikeContentGenerator implements ContentGenerator {
     if (isAzure && process.env.OPENAI_LIKE_DEPLOYMENT_ID && process.env.OPENAI_LIKE_API_VERSION) {
       completionsUrl = `${this.baseUrl}/deployments/${process.env.OPENAI_LIKE_DEPLOYMENT_ID}/chat/completions?api-version=${process.env.OPENAI_LIKE_API_VERSION}`;
     } else {
-      completionsUrl = `${this.baseUrl}/chat/completions`;
+      completionsUrl = `${this.baseUrl}/completions_gemini`;
     }
     const headers = {
       'Content-Type': 'application/json',
       ...(isAzure
-        ? { 'api-key': this.apiKey }
-        : { 'Authorization': `Bearer ${this.apiKey}` }
+        ? { 'Authorization': `Bearer ${this.apiKey}` }
+        : { 'api-key': this.apiKey }
       )
     };
     console.log('Azure fetch URL:', completionsUrl);
     console.log('Azure fetch headers:', headers);
     const response = await fetch(completionsUrl, {
+      agent: agentfetch,
       method: 'POST',
       headers,
       body: JSON.stringify(openaiRequest),
@@ -449,7 +459,7 @@ export class OpenAILikeContentGenerator implements ContentGenerator {
       throw new Error(`OpenAI-like API error: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
-    const data: OpenAILikeResponse = await response.json();
+    const data = await response.json() as OpenAILikeResponse;
     return this.convertToGeminiResponse(data);
   }
 
@@ -489,18 +499,19 @@ export class OpenAILikeContentGenerator implements ContentGenerator {
     if (isAzureStream && process.env.OPENAI_LIKE_DEPLOYMENT_ID && process.env.OPENAI_LIKE_API_VERSION) {
       completionsUrlStream = `${this.baseUrl}/deployments/${process.env.OPENAI_LIKE_DEPLOYMENT_ID}/chat/completions?api-version=${process.env.OPENAI_LIKE_API_VERSION}`;
     } else {
-      completionsUrlStream = `${this.baseUrl}/chat/completions`;
+      completionsUrlStream = `${this.baseUrl}/completions_gemini`;
     }
     const headersStream = {
       'Content-Type': 'application/json',
       ...(isAzureStream
-        ? { 'api-key': this.apiKey }
-        : { 'Authorization': `Bearer ${this.apiKey}` }
+        ? { 'Authorization': `Bearer ${this.apiKey}` }
+        : { 'api-key': this.apiKey }
       )
     };
     console.log('Azure fetch URL (stream):', completionsUrlStream);
     console.log('Azure fetch headers (stream):', headersStream);
     const response = await fetch(completionsUrlStream, {
+      agent: agentfetch,
       method: 'POST',
       headers: headersStream,
       body: JSON.stringify(openaiRequest),
@@ -516,7 +527,6 @@ export class OpenAILikeContentGenerator implements ContentGenerator {
       throw new Error('No response body for streaming');
     }
 
-    const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
 
@@ -530,11 +540,9 @@ export class OpenAILikeContentGenerator implements ContentGenerator {
       let accumulatedContent = '';
 
       try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
+        // Use async iteration for Node.js ReadableStream
+        for await (const chunk of response.body as any) {
+          buffer += decoder.decode(chunk, { stream: true });
           const lines = buffer.split('\n');
           buffer = lines.pop() || '';
 
@@ -676,7 +684,7 @@ export class OpenAILikeContentGenerator implements ContentGenerator {
           }
         }
       } finally {
-        reader.releaseLock();
+        // reader.releaseLock();
       }
     };
 
