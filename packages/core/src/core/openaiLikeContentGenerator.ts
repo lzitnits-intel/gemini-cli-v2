@@ -23,11 +23,6 @@ import fs from 'fs'
 import https from 'https'
 import fetch from "node-fetch"
 
-// Create custom agent to handle certificates
-const caPath = process.env.CA_CERT_PATH;
-const agentfetch = new https.Agent({
-  ca: fs.readFileSync(caPath ?? "")
-})
 
 /**
  * Helper function to convert ContentListUnion to Content[]
@@ -164,11 +159,18 @@ export class OpenAILikeContentGenerator implements ContentGenerator {
   private apiKey: string;
   private baseUrl: string;
   private defaultModel: string;
+  private agentfetch: https.Agent;
 
   constructor(config: OpenAILikeConfig) {
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl.replace(/\/$/, ''); // Remove trailing slash
     this.defaultModel = config.modelName || DEFAULT_OPENAI_LIKE_MODEL;
+
+    // Create custom agent to handle certificates (moved from module top-level)
+    const caPath = process.env.CA_CERT_PATH;
+    this.agentfetch = new https.Agent({
+      ca: fs.readFileSync(caPath ?? "")
+    });
   }
 
   /**
@@ -447,7 +449,7 @@ export class OpenAILikeContentGenerator implements ContentGenerator {
     console.log('Azure fetch URL:', completionsUrl);
     console.log('Azure fetch headers:', headers);
     const response = await fetch(completionsUrl, {
-      agent: agentfetch,
+      agent: this.agentfetch,
       method: 'POST',
       headers,
       body: JSON.stringify(openaiRequest),
@@ -511,7 +513,7 @@ export class OpenAILikeContentGenerator implements ContentGenerator {
     console.log('Azure fetch URL (stream):', completionsUrlStream);
     console.log('Azure fetch headers (stream):', headersStream);
     const response = await fetch(completionsUrlStream, {
-      agent: agentfetch,
+      agent: this.agentfetch,
       method: 'POST',
       headers: headersStream,
       body: JSON.stringify(openaiRequest),
