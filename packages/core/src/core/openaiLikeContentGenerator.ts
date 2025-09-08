@@ -20,6 +20,7 @@ import {
 import { ContentGenerator } from './contentGenerator.js';
 import { DEFAULT_OPENAI_LIKE_MODEL } from '../config/models.js';
 import fs from 'fs'
+import http from 'http'
 import https from 'https'
 import fetch from "node-fetch"
 
@@ -159,18 +160,25 @@ export class OpenAILikeContentGenerator implements ContentGenerator {
   private apiKey: string;
   private baseUrl: string;
   private defaultModel: string;
-  private agentfetch: https.Agent;
+  private agentHttp: http.Agent;
+  private agentHttps: https.Agent;
 
   constructor(config: OpenAILikeConfig) {
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl.replace(/\/$/, ''); // Remove trailing slash
     this.defaultModel = config.modelName || DEFAULT_OPENAI_LIKE_MODEL;
 
-    // Create custom agent to handle certificates (moved from module top-level)
     const caPath = process.env.CA_CERT_PATH;
-    this.agentfetch = new https.Agent({
-      ca: fs.readFileSync(caPath ?? "")
+    const ca = caPath ? fs.readFileSync(caPath) : undefined;
+
+    this.agentHttp = new http.Agent();
+    this.agentHttps = new https.Agent({
+      ...(ca ? { ca } : {}),
     });
+  }
+
+  private getAgentForUrl(url: string) {
+    return url.startsWith('https:') ? this.agentHttps : this.agentHttp;
   }
 
   /**
@@ -449,7 +457,7 @@ export class OpenAILikeContentGenerator implements ContentGenerator {
     console.log('Azure fetch URL:', completionsUrl);
     console.log('Azure fetch headers:', headers);
     const response = await fetch(completionsUrl, {
-      agent: this.agentfetch,
+      agent: this.getAgentForUrl(completionsUrl),
       method: 'POST',
       headers,
       body: JSON.stringify(openaiRequest),
@@ -513,7 +521,7 @@ export class OpenAILikeContentGenerator implements ContentGenerator {
     console.log('Azure fetch URL (stream):', completionsUrlStream);
     console.log('Azure fetch headers (stream):', headersStream);
     const response = await fetch(completionsUrlStream, {
-      agent: this.agentfetch,
+      agent: this.getAgentForUrl(completionsUrlStream),
       method: 'POST',
       headers: headersStream,
       body: JSON.stringify(openaiRequest),
