@@ -454,8 +454,6 @@ export class OpenAILikeContentGenerator implements ContentGenerator {
         : { 'api-key': this.apiKey }
       )
     };
-    console.debug('Azure fetch URL:', completionsUrl);
-    console.debug('Azure fetch headers:', headers);
     const response = await fetch(completionsUrl, {
       agent: this.getAgentForUrl(completionsUrl),
       method: 'POST',
@@ -518,8 +516,6 @@ export class OpenAILikeContentGenerator implements ContentGenerator {
         : { 'api-key': this.apiKey }
       )
     };
-    console.debug('Azure fetch URL (stream):', completionsUrlStream);
-    console.debug('Azure fetch headers (stream):', headersStream);
     const response = await fetch(completionsUrlStream, {
       agent: this.getAgentForUrl(completionsUrlStream),
       method: 'POST',
